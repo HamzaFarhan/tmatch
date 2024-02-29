@@ -1,9 +1,11 @@
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from .match import MatchData, create_match_df, Task
 from tmatch.utils import gen_random_string
 
+from .match import MatchData, Task, create_match_df
+
+TASKS = [Task.SEGMENTATION, Task.EMBEDDINGS, Task.NER]
 APP_RETURN_KEYS = ["sections", "embeddings", "ner"]
 
 app = FastAPI()
@@ -12,7 +14,7 @@ app = FastAPI()
 def action(
     data: MatchData,
     task_id: str,
-    tasks: list[Task] = [Task.SEGMENTATION, Task.EMBEDDINGS, Task.NER],
+    tasks: list[Task] = TASKS,
 ) -> JSONResponse:
     result = {"data": data.model_dump(), "task_id": task_id}
     try:
@@ -54,8 +56,7 @@ def search_text_action(data: MatchData) -> JSONResponse:
 @app.post("/talent_match/resume/")
 def resume_action(data: MatchData) -> JSONResponse:
     task_id = gen_random_string()
-    tasks = [Task.SEGMENTATION, Task.EMBEDDINGS, Task.NER]
-    return action(data=data, task_id=task_id, tasks=tasks)
+    return action(data=data, task_id=task_id)
 
 
 @app.post("/talent_match/ner/")

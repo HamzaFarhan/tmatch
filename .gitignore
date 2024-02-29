@@ -3,3 +3,4 @@
 /.vscode
 /exp
 /resumes
+*.pyc
