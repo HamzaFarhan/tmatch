@@ -6,7 +6,6 @@ from typing import Callable
 import google.generativeai as genai
 import numpy as np
 import pandas as pd
-from sentence_transformers import SentenceTransformer
 from termcolor import colored
 
 from .extract import MAX_CHUNK_SIZE
@@ -361,14 +360,14 @@ def write_df_sections(
 #     return sections_list
 
 
-def gen_embeddings_st(
-    text: str | list[str], model: str = EMS_MODEL, device: str = "cuda"
-) -> list[float]:
-    if not isinstance(text, list):
-        text = [text]
-    ems_model = SentenceTransformer(model_name_or_path=model, device=device)
-    ems = ems_model.encode(text).tolist()
-    return ems
+# def gen_embeddings_st(
+#     text: str | list[str], model: str = EMS_MODEL, device: str = "cuda"
+# ) -> list[float]:
+#     if not isinstance(text, list):
+#         text = [text]
+#     ems_model = SentenceTransformer(model_name_or_path=model, device=device)
+#     ems = ems_model.encode(text).tolist()
+#     return ems
 
 
 def gen_embeddings_google(

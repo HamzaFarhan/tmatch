@@ -25,10 +25,10 @@ from tmatch.gen import (
 )
 from tmatch.task_utils import (
     get_task_from_kv_store,
+    init_task_progress,
     update_status,
     update_task_error_files,
     update_task_progress,
-    init_task_progress,
 )
 from tmatch.utils import (
     b64_to_file,
@@ -48,6 +48,13 @@ def add_slash(s: str) -> str:
     return s if s.endswith("/") else s + "/"
 
 
+class Task(str, Enum):
+    EXTRACTION = "EXTRACTION"
+    SEGMENTATION = "SEGMENTATION"
+    EMBEDDINGS = "EMBEDDINGS"
+    NER = "NER"
+
+
 class MatchData(BaseModel):
     data_path: str = ""
     text: str = "My name is Mike Deen from LA and I am a Machine Learning Dev good at python and pytorch working at Netflix since 2019 and I have a BSCS from MIT. I previously worked at Google."
@@ -58,6 +65,7 @@ class MatchData(BaseModel):
         example="ten_1234",
         default="ten_1234",
     )
+    tasks: list[Task] = [Task.SEGMENTATION, Task.EMBEDDINGS, Task.NER]
     segs_folder: str = Field(
         title="The folder to write the segmentation results to.",
         description="It must be a directory.",
@@ -97,13 +105,6 @@ class MatchData(BaseModel):
         #             f.write(self.text)
         # self.task_folder = str(self.task_folder)
         return self
-
-
-class Task(str, Enum):
-    EXTRACTION = "EXTRACTION"
-    SEGMENTATION = "SEGMENTATION"
-    EMBEDDINGS = "EMBEDDINGS"
-    NER = "NER"
 
 
 def apply_fns_to_df_row(
@@ -170,11 +171,13 @@ def create_match_df(
     task_id: str = "",
     chunk_size: int | None = CHUNK_SIZE,
     chunk_overlap: int = CHUNK_OVERLAP,
-    tasks: list[Task] = [Task.SEGMENTATION, Task.EMBEDDINGS, Task.NER],
     redis_host: str = redis_kv_store.REDIS_HOST,
     redis_port: int = redis_kv_store.REDIS_PORT,
 ) -> pd.DataFrame:
     print(f"\n\nMATCH DATA: {data.model_dump()}\n\n")
+
+    if not data.data_path and not data.text:
+        return pd.DataFrame()
 
     task_id = task_id or gen_random_string()
     os.makedirs(task_folder := Path(TASK_FOLDER) / task_id, exist_ok=True)
@@ -306,7 +309,7 @@ def create_match_df(
             axis=1,
         )
 
-    if data.segs_folder or Task.SEGMENTATION in tasks:
+    if data.segs_folder or Task.SEGMENTATION in data.tasks:
         init_task_progress(**apply_args, task_key=f"{Task.SEGMENTATION.value}_PROGRESS")
         df = df.apply(
             lambda row: apply_fns_to_df_row(
@@ -317,7 +320,7 @@ def create_match_df(
             ),
             axis=1,
         )
-    if data.ems_folder or Task.EMBEDDINGS in tasks:
+    if data.ems_folder or Task.EMBEDDINGS in data.tasks:
         init_task_progress(**apply_args, task_key=f"{Task.EMBEDDINGS.value}_PROGRESS")
         df = df.apply(
             lambda row: apply_fns_to_df_row(
@@ -328,7 +331,7 @@ def create_match_df(
             ),
             axis=1,
         )
-    if data.ner_folder or Task.NER in tasks:
+    if data.ner_folder or Task.NER in data.tasks:
         init_task_progress(**apply_args, task_key=f"{Task.NER.value}_PROGRESS")
         df = df.apply(
             lambda row: apply_fns_to_df_row(
