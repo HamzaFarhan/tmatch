@@ -1,16 +1,20 @@
+import os
 from copy import deepcopy
 from enum import Enum
 
 import litellm
+from dotenv import load_dotenv
 from litellm import completion
 from termcolor import colored
+
+load_dotenv()
 
 MESSAGE_TYPE = dict[str, str]
 MESSAGES_TYPE = list[MESSAGE_TYPE] | None
 
 
-litellm.vertex_project = "talentmatch-dev"
-litellm.vertex_location = "us-central1"
+litellm.vertex_project = os.environ.get("VERTEX_PROJECT", "talentmatch-dev")
+litellm.vertex_location = os.environ.get("VERTEX_LOCATION", "us-central1")
 
 
 class ModelName(str, Enum):
