@@ -426,8 +426,8 @@ def write_df_ems(
                 "id": f"{file_path}_{section}_{i+1}",
                 "restricts": [
                     {
-                        "namespace": "tenantid",
-                        "allow": [row.get("tenantid", "ten_1234")],
+                        "namespace": "tenant_id",
+                        "allow": [row.get("tenant_id", "ten_1234")],
                     }
                 ],
                 "paragraph": text,

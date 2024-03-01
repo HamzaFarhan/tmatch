@@ -60,7 +60,7 @@ class MatchData(BaseModel):
     text: str = "My name is Mike Deen from LA and I am a Machine Learning Dev good at python and pytorch working at Netflix since 2019 and I have a BSCS from MIT. I previously worked at Google."
     text_file_name: str = Field(default_factory=gen_random_string)
     extension: str = ".txt"
-    tenantid: str = Field(
+    tenant_id: str = Field(
         title="The tenant id of the user.",
         example="ten_1234",
         default="ten_1234",
@@ -226,7 +226,7 @@ def create_match_df(
             "ner_folder": local_ner_folder,
         },
     )
-    df["tenantid"] = data.tenantid
+    df["tenant_id"] = data.tenant_id
 
     row_fns = {
         Task.EXTRACTION: lambda row: row_fn(

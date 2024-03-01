@@ -1,6 +1,8 @@
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
+from termcolor import colored
 
+from tmatch import redis_kv_store
 from tmatch.utils import gen_random_string
 
 from .match import MatchData, Task, create_match_df
@@ -86,6 +88,24 @@ def bulk_tasks_endpoint(
     return JSONResponse(content={"data": data.model_dump(), "task_id": task_id})
 
 
+@app.get("/talent_match/{task_id}")
+def get_task(task_id: str) -> JSONResponse:
+    if not task_id:
+        raise HTTPException(status_code=400, detail="Task id must be provided.")
+    print(colored(f"\n\nGETTING TASK FOR TASK_ID: {task_id}\n\n", "cyan"))
+    kv_store = redis_kv_store.KeyValueStore(
+        redis_host=redis_kv_store.REDIS_HOST, redis_port=redis_kv_store.REDIS_PORT
+    )
+    task = kv_store.get(task_id)
+    if not task:
+        raise HTTPException(
+            status_code=404, detail=f"No task found for task_id {task_id}."
+        )
+    if not isinstance(task, dict):
+        task = {"task_id": task_id, "task": task}
+    return JSONResponse(content=task)
+
+
 """
 The fields that the endpoints accept are:
 
@@ -96,7 +116,7 @@ extension: The extension of the file to write the text to. It is used when the t
            If it is one of '.pdf', '.doc', or '.docx', we will assume that the text is base64 encoded.
            It will then be decoded and written to a file with the given extension.
            If it's '.txt', the text will be written to a file with the given extension. It is '.txt' by default.
-tenantid: The tenant id of the user.
+tenant_id: The tenant id of the user.
 tasks: The list of tasks to perform. The possible tasks are: 'SEGMENTATION', 'EMBEDDINGS', and 'NER'
 segs_folder: The folder to write the segmentation results to. 
              If it is not provided, the segmentation results will not be written to a file. 
@@ -117,8 +137,9 @@ The endpoints are:
 /talent_match/all_tasks/: It sets tasks to ['SEGMENTATION', 'EMBEDDINGS', 'NER'] so it extracts the segmentation, embeddings, and named entity recognition results of data_path or text and returns the results. It writes the results too if the corresponding folders are provided.
 /talent_match/tasks/: The possible tasks are: 'SEGMENTATION', 'EMBEDDINGS', and 'NER'. It extracts the specified tasks of data_path or text and returns the results. It writes the results too when the corresponding folders are provided.
 /talent_match/bulk_tasks/: The possible tasks are: 'SEGMENTATION', 'EMBEDDINGS', and 'NER'. It extracts the specified tasks of data_path or text and returns the results. It writes the results too when the corresponding folders are provided.
+/task/{task_id}: It returns the task that was created with the given task_id.
 
-All endpoints return a JSON response with the following fields:
+All talent_match/ endpoints return a JSON response with the following fields:
 
 data: The data that was sent to the endpoint.
 task_id: The id of the task that was created. It is a random string.
