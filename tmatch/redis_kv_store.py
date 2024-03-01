@@ -1,8 +1,13 @@
+import os
+
 import redis
+from dotenv import load_dotenv
 from termcolor import colored
 
-REDIS_HOST = "127.0.0.1"
-REDIS_PORT = 6379
+load_dotenv()
+
+REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
+REDIS_PORT = os.environ.get("REDIS_PORT", 6379)
 
 
 def connect_to_server(redis_host: str = REDIS_HOST, redis_port: int = REDIS_PORT):
